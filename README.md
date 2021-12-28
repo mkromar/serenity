@@ -82,6 +82,7 @@ You can watch videos of the system being developed on YouTube:
 * On-line help system (both terminal and GUI variants)
 * Web browser (Browser)
 * C++ IDE (HackStudio)
+* IRC client
 * Desktop synthesizer (Piano)
 * E-mail client (Mail)
 * Various desktop apps & games
