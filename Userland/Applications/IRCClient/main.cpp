@@ -74,12 +74,13 @@ int main(int argc, char** argv)
             warnln("Invalid URL");
             return 1;
         }
-
-        if (!url.port() || url.port() == 80)
-            url.set_port(6667);
     }
 
-    auto app_window = IRCAppWindow::construct(url.host(), url.port());
+    auto port = 6667;
+    if (url.port().has_value())
+        port = url.port().value();
+
+    auto app_window = IRCAppWindow::construct(url.host(), port);
     app_window->show();
     return app->exec();
 }
