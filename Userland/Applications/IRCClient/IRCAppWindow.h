@@ -22,7 +22,7 @@ public:
     void set_active_window(IRCWindow&);
 
 private:
-    IRCAppWindow(String server, int port);
+    IRCAppWindow(String server, int port, bool connect_with_tls);
 
     void setup_client();
     void setup_actions();

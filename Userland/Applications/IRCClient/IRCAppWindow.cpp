@@ -27,8 +27,8 @@ IRCAppWindow& IRCAppWindow::the()
     return *s_the;
 }
 
-IRCAppWindow::IRCAppWindow(String server, int port)
-    : m_client(IRCClient::construct(server, port))
+IRCAppWindow::IRCAppWindow(String server, int port, bool secure)
+    : m_client(IRCClient::construct(server, port, secure))
 {
     VERIFY(!s_the);
     s_the = this;

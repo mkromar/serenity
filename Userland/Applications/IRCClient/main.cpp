@@ -51,36 +51,38 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    if (unveil("/etc/ca_certs.ini", "r") < 0) {
+        perror("unveil");
+        return 1;
+    }
+
     if (unveil(nullptr, nullptr) < 0) {
         perror("unveil");
         return 1;
     }
 
     URL url = "";
+    bool secure = false;
     if (app->args().size() >= 1) {
         url = URL::create_with_url_or_path(app->args()[0]);
-
-        if (url.protocol().to_lowercase() == "ircs") {
-            warnln("Secure IRC over SSL/TLS (ircs) is not supported");
-            return 1;
-        }
-
-        if (url.protocol().to_lowercase() != "irc") {
-            warnln("Unsupported protocol");
-            return 1;
-        }
 
         if (url.host().is_empty()) {
             warnln("Invalid URL");
             return 1;
         }
+        
+        auto protocol = url.protocol().to_lowercase();
+        if (protocol != "irc" && protocol != "ircs") {
+            warnln("Unsupported protocol");
+            return 1;
+        }
+
+        if (protocol == "ircs") {
+            secure = true;
+        }
     }
 
-    auto port = 6667;
-    if (url.port().has_value())
-        port = url.port().value();
-
-    auto app_window = IRCAppWindow::construct(url.host(), port);
+    auto app_window = IRCAppWindow::construct(url.host(), url.port_or_default(), secure);
     app_window->show();
     return app->exec();
 }

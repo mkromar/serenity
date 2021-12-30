@@ -14,6 +14,7 @@
 #include <AK/String.h>
 #include <LibCore/ConfigFile.h>
 #include <LibCore/TCPSocket.h>
+#include <LibTLS/TLSv12.h>
 
 class IRCChannel;
 class IRCQuery;
@@ -118,7 +119,7 @@ public:
     void add_server_message(const String&, Color = Color::Black);
 
 private:
-    IRCClient(String server, int port);
+    IRCClient(String server, int port, bool connect_with_tls);
 
     struct Message {
         String prefix;
@@ -132,6 +133,7 @@ private:
     };
 
     void receive_from_server();
+    void receive_from_server_tls();
     void send(const String&);
     void send_user();
     void send_nick();
@@ -184,15 +186,22 @@ private:
     void send_ctcp_request(const StringView& peer, const StringView& payload);
     void send_ctcp_response(const StringView& peer, const StringView& payload);
 
+    bool connect_plaintext();
+    bool connect_tls();
     void on_socket_connected();
+    void on_tls_socket_connected();
+
+    bool m_first_connection = true;
 
     String m_hostname;
     int m_port { 6667 };
 
     RefPtr<Core::TCPSocket> m_socket;
 
+    bool m_tls { false };
+    RefPtr<TLS::TLSv12> m_tls_socket;
+
     String m_nickname;
-    RefPtr<Core::Notifier> m_notifier;
     HashMap<String, RefPtr<IRCChannel>, CaseInsensitiveStringTraits> m_channels;
     HashMap<String, RefPtr<IRCQuery>, CaseInsensitiveStringTraits> m_queries;
 

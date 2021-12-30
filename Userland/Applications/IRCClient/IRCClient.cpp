@@ -43,22 +43,23 @@ enum IRCNumeric {
     ERR_NICKNAMEINUSE = 433,
 };
 
-IRCClient::IRCClient(String server, int port)
+IRCClient::IRCClient(String server, int port, bool connect_with_tls)
     : m_nickname("seren1ty")
     , m_client_window_list_model(IRCWindowListModel::create(*this))
     , m_log(IRCLogBuffer::create())
     , m_config(Core::ConfigFile::open_for_app("IRCClient", Core::ConfigFile::AllowWriting::Yes))
 {
     struct passwd* user_pw = getpwuid(getuid());
-    m_socket = Core::TCPSocket::construct(this);
     m_nickname = m_config->read_entry("User", "Nickname", String::formatted("{}_seren1ty", user_pw->pw_name));
 
     if (server.is_empty()) {
         m_hostname = m_config->read_entry("Connection", "Server", "");
         m_port = m_config->read_num_entry("Connection", "Port", 6667);
+        m_tls = m_config->read_num_entry("Connection", "Secure", 0);
     } else {
         m_hostname = server;
         m_port = port ? port : 6667;
+        m_tls = connect_with_tls;
     }
 
     m_show_join_part_messages = m_config->read_bool_entry("Messaging", "ShowJoinPartMessages", 1);
@@ -70,6 +71,13 @@ IRCClient::IRCClient(String server, int port)
     m_ctcp_version_reply = m_config->read_entry("CTCP", "VersionReply", "IRC Client [x86] / Serenity OS");
     m_ctcp_userinfo_reply = m_config->read_entry("CTCP", "UserInfoReply", user_pw->pw_name);
     m_ctcp_finger_reply = m_config->read_entry("CTCP", "FingerReply", user_pw->pw_name);
+
+    if (m_tls) {
+        m_tls_socket = TLS::TLSv12::construct(nullptr);
+        m_tls_socket->set_root_certificates(DefaultRootCACertificates::the().certificates());
+    } else {
+        m_socket = Core::TCPSocket::construct();
+    }
 }
 
 IRCClient::~IRCClient()
@@ -85,23 +93,47 @@ void IRCClient::set_server(const String& hostname, int port)
     m_config->sync();
 }
 
-void IRCClient::on_socket_connected()
-{
-    m_notifier = Core::Notifier::construct(m_socket->fd(), Core::Notifier::Read);
-    m_notifier->on_ready_to_read = [this] { receive_from_server(); };
-
-    send_user();
-    send_nick();
-}
-
 bool IRCClient::connect()
 {
-    if (m_socket->is_connected())
-        VERIFY_NOT_REACHED();
+    if (m_tls)
+        return connect_tls();
+    else
+        return connect_plaintext();
+}
 
-    m_socket->on_connected = [this] { on_socket_connected(); };
+bool IRCClient::connect_plaintext()
+{
+    m_socket->on_ready_to_read = [&] {
+        dbgln("ready to read");
+        receive_from_server();
+    };
+    m_socket->on_connected = [&] {
+        dbgln("connected via plaintext");
+        send_user();
+        send_nick();
+    };
+    auto success = m_socket->connect(m_hostname, m_port);
+    dbgln("connecting to {}:{} via plaintext {}", m_hostname, m_port, success);
+    return success;
+}
 
-    return m_socket->connect(m_hostname, m_port);
+bool IRCClient::connect_tls()
+{
+    m_tls_socket->on_tls_ready_to_read = [&](TLS::TLSv12&) {
+        dbgln("ready to read");
+        receive_from_server_tls();
+    };
+    m_tls_socket->on_tls_error = [&](TLS::AlertDescription alert) {
+        dbgln("failed: {}", alert_name(alert));
+    };
+    m_tls_socket->on_tls_connected = [&] {
+        dbgln("connected via tls");
+        //send_user();
+        //send_nick();
+    };
+    auto success = m_tls_socket->connect(m_hostname, m_port);
+    dbgln("connecting to {}:{} via TLS {}", m_hostname, m_port ,success);
+    return success;
 }
 
 void IRCClient::receive_from_server()
@@ -119,8 +151,24 @@ void IRCClient::receive_from_server()
     }
 }
 
+void IRCClient::receive_from_server_tls()
+{
+    while (m_tls_socket->can_read_line()) {
+        auto line = m_tls_socket->read_line(1024);
+        if (line.is_null()) {
+            if (!m_tls_socket->is_connected()) {
+                outln("IRCClient: Connection closed!");
+                exit(1);
+            }
+            VERIFY_NOT_REACHED();
+        }
+        process_line(line);
+    }
+}
+
 void IRCClient::process_line(const String& line)
 {
+    dbgln("recieved line: {}", line);
     Message msg;
     Vector<char, 32> prefix;
     Vector<char, 32> command;
@@ -194,9 +242,17 @@ void IRCClient::process_line(const String& line)
 
 void IRCClient::send(const String& text)
 {
-    if (!m_socket->send(text.bytes())) {
-        perror("send");
-        exit(1);
+    dbgln("sending: {}", text);
+    if (m_tls) {
+        if (!m_tls_socket->send(text.bytes())) {
+            perror("send");
+            exit(1);
+        }
+    } else {
+        if (!m_socket->send(text.bytes())) {
+            perror("send");
+            exit(1);
+        }
     }
 }
 
