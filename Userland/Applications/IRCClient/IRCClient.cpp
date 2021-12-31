@@ -145,7 +145,7 @@ void IRCClient::receive_from_server()
             outln("IRCClient: Connection closed!");
             exit(1);
         }
-        VERIFY_NOT_REACHED();
+        return;
     }
 
     // Once we get server hello we can start sending
@@ -170,7 +170,7 @@ void IRCClient::receive_from_server_tls()
             outln("IRCClient: Connection closed!");
             exit(1);
         }
-        VERIFY_NOT_REACHED();
+        return;
     }
 
     // Once we get server hello we can start sending
