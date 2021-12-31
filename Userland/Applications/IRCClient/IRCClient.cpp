@@ -95,22 +95,24 @@ void IRCClient::set_server(const String& hostname, int port)
 
 bool IRCClient::connect()
 {
+    bool success;
     if (m_tls)
-        return connect_tls();
+        success = connect_tls();
     else
-        return connect_plaintext();
+        success = connect_plaintext();
+    
+    m_connect_pending = Promise<Empty>::construct();
+
+    return success;
 }
 
 bool IRCClient::connect_plaintext()
 {
     m_socket->on_ready_to_read = [&] {
-        dbgln("ready to read");
         receive_from_server();
     };
     m_socket->on_connected = [&] {
         dbgln("connected via plaintext");
-        send_user();
-        send_nick();
     };
     auto success = m_socket->connect(m_hostname, m_port);
     dbgln("connecting to {}:{} via plaintext {}", m_hostname, m_port, success);
@@ -120,7 +122,6 @@ bool IRCClient::connect_plaintext()
 bool IRCClient::connect_tls()
 {
     m_tls_socket->on_tls_ready_to_read = [&](TLS::TLSv12&) {
-        dbgln("ready to read");
         receive_from_server_tls();
     };
     m_tls_socket->on_tls_error = [&](TLS::AlertDescription alert) {
@@ -128,8 +129,6 @@ bool IRCClient::connect_tls()
     };
     m_tls_socket->on_tls_connected = [&] {
         dbgln("connected via tls");
-        //send_user();
-        //send_nick();
     };
     auto success = m_tls_socket->connect(m_hostname, m_port);
     dbgln("connecting to {}:{} via TLS {}", m_hostname, m_port ,success);
@@ -138,37 +137,56 @@ bool IRCClient::connect_tls()
 
 void IRCClient::receive_from_server()
 {
-    while (m_socket->can_read_line()) {
-        auto line = m_socket->read_line();
-        if (line.is_null()) {
-            if (!m_socket->is_connected()) {
-                outln("IRCClient: Connection closed!");
-                exit(1);
-            }
-            VERIFY_NOT_REACHED();
+    if (!m_socket->can_read())
+        return;
+    auto line = m_socket->read_line();
+    if (line.is_null()) {
+        if (!m_socket->is_connected()) {
+            outln("IRCClient: Connection closed!");
+            exit(1);
         }
-        process_line(line);
+        VERIFY_NOT_REACHED();
     }
+
+    // Once we get server hello we can start sending
+    if (m_connect_pending) {
+        m_connect_pending->resolve({});
+        m_connect_pending.clear();
+        send_user();
+        send_nick();
+        return;
+    }
+
+    process_line(line);
 }
 
 void IRCClient::receive_from_server_tls()
 {
-    while (m_tls_socket->can_read_line()) {
-        auto line = m_tls_socket->read_line(1024);
-        if (line.is_null()) {
-            if (!m_tls_socket->is_connected()) {
-                outln("IRCClient: Connection closed!");
-                exit(1);
-            }
-            VERIFY_NOT_REACHED();
+    if (!m_tls_socket->can_read())
+        return;
+    auto line = m_tls_socket->read_line(1024);
+    if (line.is_null()) {
+        if (!m_tls_socket->is_connected()) {
+            outln("IRCClient: Connection closed!");
+            exit(1);
         }
-        process_line(line);
+        VERIFY_NOT_REACHED();
     }
+
+    // Once we get server hello we can start sending
+    if (m_connect_pending) {
+        m_connect_pending->resolve({});
+        m_connect_pending.clear();
+        send_user();
+        send_nick();
+        return;
+    }
+
+    process_line(line);
 }
 
 void IRCClient::process_line(const String& line)
 {
-    dbgln("recieved line: {}", line);
     Message msg;
     Vector<char, 32> prefix;
     Vector<char, 32> command;
@@ -244,7 +262,7 @@ void IRCClient::send(const String& text)
 {
     dbgln("sending: {}", text);
     if (m_tls) {
-        if (!m_tls_socket->send(text.bytes())) {
+        if (!m_tls_socket->write(text.bytes())) {
             perror("send");
             exit(1);
         }
@@ -290,14 +308,14 @@ void IRCClient::send_whois(const String& nick)
 void IRCClient::handle(const Message& msg)
 {
     if constexpr (IRC_DEBUG) {
-        outln("IRCClient::execute: prefix='{}', command='{}', arguments={}",
+        dbgln("IRCClient::execute: prefix='{}', command='{}', arguments={}",
             msg.prefix,
             msg.command,
             msg.arguments.size());
 
         size_t index = 0;
         for (auto& arg : msg.arguments)
-            outln("    [{}]: {}", index++, arg);
+            dbgln("    [{}]: {}", index++, arg);
     }
 
     auto numeric = msg.command.to_uint();

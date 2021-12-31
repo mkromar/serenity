@@ -14,7 +14,11 @@
 #include <AK/String.h>
 #include <LibCore/ConfigFile.h>
 #include <LibCore/TCPSocket.h>
+#include <LibCore/Promise.h>
 #include <LibTLS/TLSv12.h>
+
+template<typename T>
+using Promise = Core::Promise<T>;
 
 class IRCChannel;
 class IRCQuery;
@@ -191,8 +195,6 @@ private:
     void on_socket_connected();
     void on_tls_socket_connected();
 
-    bool m_first_connection = true;
-
     String m_hostname;
     int m_port { 6667 };
 
@@ -200,6 +202,8 @@ private:
 
     bool m_tls { false };
     RefPtr<TLS::TLSv12> m_tls_socket;
+
+    RefPtr<Promise<Empty>> m_connect_pending {};
 
     String m_nickname;
     HashMap<String, RefPtr<IRCChannel>, CaseInsensitiveStringTraits> m_channels;
