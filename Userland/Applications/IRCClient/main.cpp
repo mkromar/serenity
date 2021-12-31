@@ -6,13 +6,15 @@
 
 #include "IRCAppWindow.h"
 #include "IRCClient.h"
+#include <LibCore/System.h>
 #include <LibCore/StandardPaths.h>
 #include <LibGUI/Application.h>
 #include <LibGUI/MessageBox.h>
+#include <LibMain/Main.h>
 #include <stdio.h>
 #include <unistd.h>
 
-int main(int argc, char** argv)
+ErrorOr<int> serenity_main(Main::Arguments arguments)
 {
     if (pledge("stdio inet unix recvfd sendfd cpath rpath wpath", nullptr) < 0) {
         perror("pledge");
@@ -24,7 +26,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    auto app = GUI::Application::construct(argc, argv);
+    auto app = TRY(GUI::Application::try_create(arguments));
 
     if (unveil("/tmp/portal/lookup", "rw") < 0) {
         perror("unveil");
@@ -55,6 +57,8 @@ int main(int argc, char** argv)
         perror("unveil");
         return 1;
     }
+
+    TRY(Core::System::unveil("/tmp/portal/webcontent", "rw"));
 
     if (unveil(nullptr, nullptr) < 0) {
         perror("unveil");

@@ -19,7 +19,6 @@
 #include <LibGUI/TextBox.h>
 #include <LibGUI/TextEditor.h>
 #include <LibGUI/Window.h>
-#include <LibWeb/InProcessWebView.h>
 
 IRCWindow::IRCWindow(IRCClient& client, void* owner, Type type, const String& name)
     : m_client(client)
@@ -32,7 +31,7 @@ IRCWindow::IRCWindow(IRCClient& client, void* owner, Type type, const String& na
     // Make a container for the log buffer view + (optional) member list.
     auto& container = add<GUI::HorizontalSplitter>();
 
-    m_page_view = container.add<Web::InProcessWebView>();
+    m_page_view = container.add<Web::OutOfProcessWebView>();
 
     if (m_type == Channel) {
         auto& member_view = container.add<GUI::TableView>();
@@ -193,7 +192,7 @@ IRCWindow::~IRCWindow()
 void IRCWindow::set_log_buffer(const IRCLogBuffer& log_buffer)
 {
     m_log_buffer = &log_buffer;
-    m_page_view->set_document(const_cast<Web::DOM::Document*>(&log_buffer.document()));
+    //m_page_view->set_document(const_cast<Web::DOM::Document*>(&log_buffer.document()));
 }
 
 bool IRCWindow::is_active() const
