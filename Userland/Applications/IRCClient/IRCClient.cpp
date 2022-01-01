@@ -74,6 +74,7 @@ IRCClient::IRCClient(String server, int port, bool connect_with_tls)
 
     if (m_tls) {
         m_tls_socket = TLS::TLSv12::construct(nullptr);
+        m_tls_socket->m_ignore_invalid_certificate = true;
         m_tls_socket->set_root_certificates(DefaultRootCACertificates::the().certificates());
     } else {
         m_socket = Core::TCPSocket::construct();
