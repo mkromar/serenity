@@ -40,7 +40,12 @@ ssize_t TLSv12::handle_certificate(ReadonlyBytes buffer)
     size_t size = certificate_total_length;
 
     size_t index = 0;
-    bool valid_certificate = false;
+
+    bool valid_certificate;
+    if (m_ignore_invalid_certificate)
+        valid_certificate = true;
+    else
+        valid_certificate = false;
 
     while (size > 0) {
         ++index;

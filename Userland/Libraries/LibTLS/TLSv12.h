@@ -327,6 +327,8 @@ public:
         m_context.extensions.SNI = sni;
     }
 
+    bool m_ignore_invalid_certificate { false };
+
     bool load_certificates(ReadonlyBytes pem_buffer);
     bool load_private_key(ReadonlyBytes pem_buffer);
 
