@@ -7,63 +7,28 @@
 #include "IRCAppWindow.h"
 #include "IRCClient.h"
 #include <LibCore/System.h>
-#include <LibCore/StandardPaths.h>
 #include <LibGUI/Application.h>
 #include <LibGUI/MessageBox.h>
 #include <LibMain/Main.h>
 #include <stdio.h>
-#include <unistd.h>
 
 ErrorOr<int> serenity_main(Main::Arguments arguments)
 {
-    if (pledge("stdio inet unix recvfd sendfd cpath rpath wpath", nullptr) < 0) {
-        perror("pledge");
-        return 1;
-    }
-
     if (getuid() == 0) {
         warnln("Refusing to run as root");
         return 1;
     }
+ 
+    TRY(Core::System::pledge("stdio inet unix recvfd sendfd cpath rpath wpath"));
 
-    auto app = TRY(GUI::Application::try_create(arguments));
-
-    if (unveil("/tmp/portal/lookup", "rw") < 0) {
-        perror("unveil");
-        return 1;
-    }
-
-    if (unveil("/tmp/portal/notify", "rw") < 0) {
-        perror("unveil");
-        return 1;
-    }
-
-    if (unveil("/etc/passwd", "r") < 0) {
-        perror("unveil");
-        return 1;
-    }
-
-    if (unveil(Core::StandardPaths::home_directory().characters(), "rwc") < 0) {
-        perror("unveil");
-        return 1;
-    }
-
-    if (unveil("/res", "r") < 0) {
-        perror("unveil");
-        return 1;
-    }
-
-    if (unveil("/etc/ca_certs.ini", "r") < 0) {
-        perror("unveil");
-        return 1;
-    }
-
+    auto app = GUI::Application::construct(arguments);
+    
     TRY(Core::System::unveil("/tmp/portal/webcontent", "rw"));
-
-    if (unveil(nullptr, nullptr) < 0) {
-        perror("unveil");
-        return 1;
-    }
+    TRY(Core::System::unveil("/tmp/portal/lookup", "rw"));
+    TRY(Core::System::unveil("/res", "r"));
+    TRY(Core::System::unveil("/etc/passwd", "r"));
+    TRY(Core::System::unveil("/etc/ca_certs.ini", "r"));
+    TRY(Core::System::unveil(nullptr, nullptr));
 
     URL url = "";
     bool secure = false;

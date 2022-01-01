@@ -15,11 +15,9 @@
 #include <AK/QuickSort.h>
 #include <AK/StringBuilder.h>
 #include <LibCore/DateTime.h>
-#include <LibCore/Notifier.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <strings.h>
-#include <unistd.h>
 
 enum IRCNumeric {
     RPL_WELCOME = 1,
