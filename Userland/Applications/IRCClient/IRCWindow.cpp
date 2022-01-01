@@ -192,7 +192,7 @@ IRCWindow::~IRCWindow()
 void IRCWindow::set_log_buffer(const IRCLogBuffer& log_buffer)
 {
     m_log_buffer = &log_buffer;
-    //m_page_view->set_document(const_cast<Web::DOM::Document*>(&log_buffer.document()));
+    m_page_view->load_html("", {});
 }
 
 bool IRCWindow::is_active() const
@@ -240,6 +240,8 @@ void IRCWindow::did_add_message(const String& name, const String& message)
         m_client->aid_update_window_list();
         return;
     }
+    auto html = m_log_buffer->document().document_element()->inner_html();
+    m_page_view->load_html(html, {});
     m_page_view->scroll_to_bottom();
 }
 
