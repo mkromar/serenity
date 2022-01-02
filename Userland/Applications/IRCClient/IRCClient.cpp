@@ -307,14 +307,14 @@ void IRCClient::send_whois(const String& nick)
 void IRCClient::handle(const Message& msg)
 {
     if constexpr (IRC_DEBUG) {
-        dbgln("IRCClient::execute: prefix='{}', command='{}', arguments={}",
+        outln("IRCClient::execute: prefix='{}', command='{}', arguments={}",
             msg.prefix,
             msg.command,
             msg.arguments.size());
 
         size_t index = 0;
         for (auto& arg : msg.arguments)
-            dbgln("    [{}]: {}", index++, arg);
+            outln("    [{}]: {}", index++, arg);
     }
 
     auto numeric = msg.command.to_uint();
