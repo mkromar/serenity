@@ -3,8 +3,11 @@ serenity_component(
     TARGETS IRCClient
 )
 
+compile_gml(IRCAppWindow.gml IRCAppWindowGML.h irc_app_window_gml)
+
 set(SOURCES
     IRCAppWindow.cpp
+    IRCAppWindowGML.h
     IRCChannel.cpp
     IRCChannelMemberListModel.cpp
     IRCClient.cpp

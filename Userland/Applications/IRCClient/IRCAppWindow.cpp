@@ -19,6 +19,7 @@
 #include <LibGUI/TableView.h>
 #include <LibGUI/Toolbar.h>
 #include <LibGUI/ToolbarContainer.h>
+#include <Applications/IRCClient/IRCAppWindowGML.h>
 
 static IRCAppWindow* s_the;
 
@@ -280,12 +281,10 @@ void IRCAppWindow::setup_menus()
 void IRCAppWindow::setup_widgets()
 {
     auto& widget = set_main_widget<GUI::Widget>();
-    widget.set_fill_with_background_color(true);
-    widget.set_layout<GUI::VerticalBoxLayout>();
-    widget.layout()->set_spacing(0);
+    widget.load_from_gml(irc_app_window_gml);
 
-    auto& toolbar_container = widget.add<GUI::ToolbarContainer>();
-    auto& toolbar = toolbar_container.add<GUI::Toolbar>();
+    auto& toolbar = *widget.find_descendant_of_type_named<GUI::Toolbar>("toolbar");
+
     toolbar.set_has_frame(false);
     toolbar.add_action(*m_change_nick_action);
     toolbar.add_separator();
@@ -296,13 +295,7 @@ void IRCAppWindow::setup_widgets()
     toolbar.add_action(*m_open_query_action);
     toolbar.add_action(*m_close_query_action);
 
-    auto& outer_container = widget.add<GUI::Widget>();
-    outer_container.set_layout<GUI::VerticalBoxLayout>();
-    outer_container.layout()->set_margins({ 0, 2, 2 });
-
-    auto& horizontal_container = outer_container.add<GUI::HorizontalSplitter>();
-
-    m_window_list = horizontal_container.add<GUI::TableView>();
+    m_window_list = *widget.find_descendant_of_type_named<GUI::TableView>("window_list");
     m_window_list->set_column_headers_visible(false);
     m_window_list->set_alternating_row_colors(false);
     m_window_list->set_model(m_client->client_window_list_model());
@@ -312,7 +305,7 @@ void IRCAppWindow::setup_widgets()
         set_active_window(m_client->window_at(index.row()));
     };
 
-    m_container = horizontal_container.add<GUI::StackWidget>();
+    m_container = *widget.find_descendant_of_type_named<GUI::StackWidget>("container");
     m_container->on_active_widget_change = [this](auto*) {
         update_gui_actions();
     };
