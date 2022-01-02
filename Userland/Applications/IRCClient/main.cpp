@@ -7,6 +7,7 @@
 #include "IRCAppWindow.h"
 #include "IRCClient.h"
 #include <LibCore/System.h>
+#include <LibCore/StandardPaths.h>
 #include <LibGUI/Application.h>
 #include <LibGUI/MessageBox.h>
 #include <LibMain/Main.h>
@@ -28,6 +29,7 @@ ErrorOr<int> serenity_main(Main::Arguments arguments)
     TRY(Core::System::unveil("/res", "r"));
     TRY(Core::System::unveil("/etc/passwd", "r"));
     TRY(Core::System::unveil("/etc/ca_certs.ini", "r"));
+    TRY(Core::System::unveil(Core::StandardPaths::home_directory().characters(), "rwc"));
     TRY(Core::System::unveil(nullptr, nullptr));
 
     URL url = "";
