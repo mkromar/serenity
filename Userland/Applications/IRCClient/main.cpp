@@ -10,6 +10,7 @@
 #include <LibCore/StandardPaths.h>
 #include <LibGUI/Application.h>
 #include <LibGUI/MessageBox.h>
+#include <LibGUI/Icon.h>
 #include <LibMain/Main.h>
 #include <stdio.h>
 
@@ -53,7 +54,9 @@ ErrorOr<int> serenity_main(Main::Arguments arguments)
         }
     }
 
+    auto app_icon = GUI::Icon::default_icon("app-irc-client");
     auto app_window = IRCAppWindow::construct(url.host(), url.port_or_default(), secure);
+    app_window->set_icon(app_icon.bitmap_for_size(16));
     app_window->show();
     return app->exec();
 }

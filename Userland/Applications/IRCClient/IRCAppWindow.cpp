@@ -34,8 +34,6 @@ IRCAppWindow::IRCAppWindow(String server, int port, bool secure)
     VERIFY(!s_the);
     s_the = this;
 
-    set_icon(Gfx::Bitmap::try_load_from_file("/res/icons/16x16/app-irc-client.png").release_value_but_fixme_should_propagate_errors());
-
     update_title();
     resize(600, 400);
     setup_actions();
