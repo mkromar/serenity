@@ -33,6 +33,11 @@ IRCWindow::IRCWindow(IRCClient& client, void* owner, Type type, const String& na
 
     m_page_view = container.add<Web::OutOfProcessWebView>();
 
+    m_page_view->load("data:text/html,<!DOCTYPE html><html></html>");
+    m_page_view->on_load_finish = [this](auto&) {
+        m_page_view->run_javascript("window.scrollTo(0, 9999);");
+    };
+
     if (m_type == Channel) {
         auto& member_view = container.add<GUI::TableView>();
         member_view.set_column_headers_visible(false);
@@ -192,7 +197,6 @@ IRCWindow::~IRCWindow()
 void IRCWindow::set_log_buffer(const IRCLogBuffer& log_buffer)
 {
     m_log_buffer = &log_buffer;
-    m_page_view->load_html("<!DOCTYPE html><html></html>", {});
 }
 
 bool IRCWindow::is_active() const
@@ -242,12 +246,10 @@ void IRCWindow::did_add_message(const String& name, const String& message)
     }
     auto document_inner_html = m_log_buffer->document().document_element()->inner_html();
     StringBuilder html_builder;
-    html_builder.append("<!DOCTYPE html><html>");
+    html_builder.append("data:text/html,<!DOCTYPE html><html>");
     html_builder.append(document_inner_html);
     html_builder.append("</html>");
-
-    m_page_view->load_html(html_builder.build(), {});
-    m_page_view->scroll_to_bottom();
+    m_page_view->load(html_builder.build());
 }
 
 void IRCWindow::clear_unread_count()
