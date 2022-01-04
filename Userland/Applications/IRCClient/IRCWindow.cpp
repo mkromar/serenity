@@ -295,7 +295,8 @@ void IRCWindow::add_message(char prefix, const String& name, const String& text,
     builder.append(R"~~~(
         document.body.appendChild(msg);
         window.scrollTo(0, 99999); )~~~");
-
+    // FIXME: use document.body.scrollHeight in window.scrollTo when implemented :^)
+    
     m_page_view->run_javascript(builder.string_view());
 }
 
@@ -319,6 +320,7 @@ void IRCWindow::add_message(const String& text, Color color)
     builder.append(R"~~~(
         document.body.appendChild(msg);
         window.scrollTo(0, 9999); )~~~");
+    // FIXME: use document.body.scrollHeight in window.scrollTo when implemented :^)
 
     m_page_view->run_javascript(builder.string_view());
 }
