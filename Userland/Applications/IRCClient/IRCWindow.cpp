@@ -192,7 +192,7 @@ IRCWindow::~IRCWindow()
 void IRCWindow::set_log_buffer(const IRCLogBuffer& log_buffer)
 {
     m_log_buffer = &log_buffer;
-    m_page_view->load_empty_document();
+    m_page_view->load_html("<!DOCTYPE html><html></html>", {});
 }
 
 bool IRCWindow::is_active() const
@@ -240,13 +240,13 @@ void IRCWindow::did_add_message(const String& name, const String& message)
         m_client->aid_update_window_list();
         return;
     }
-    auto html = m_log_buffer->document().document_element()->inner_html();
-    StringBuilder builder;
-    builder.append("<!DOCTYPE html><html>");
-    builder.append(html);
-    builder.append("</html>");
+    auto document_inner_html = m_log_buffer->document().document_element()->inner_html();
+    StringBuilder html_builder;
+    html_builder.append("<!DOCTYPE html><html>");
+    html_builder.append(document_inner_html);
+    html_builder.append("</html>");
 
-    m_page_view->load_html(builder.build(), {});
+    m_page_view->load_html(html_builder.build(), {});
     m_page_view->scroll_to_bottom();
 }
 
