@@ -9,6 +9,8 @@
 #include <LibGUI/Widget.h>
 #include <LibWeb/Forward.h>
 #include <LibWeb/OutOfProcessWebView.h>
+#include <LibGfx/Color.h>
+#include <time.h>
 
 class IRCChannel;
 class IRCClient;
@@ -38,6 +40,8 @@ public:
     int unread_count() const;
     void clear_unread_count();
 
+    void add_message(char prefix, const String& name, const String& text, Color color);
+    void add_message(const String& text, Color color);
     void did_add_message(const String& name = {}, const String& message = {});
 
     IRCChannel& channel() { return *(IRCChannel*)m_owner; }

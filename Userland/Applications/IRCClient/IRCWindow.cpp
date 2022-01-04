@@ -33,7 +33,7 @@ IRCWindow::IRCWindow(IRCClient& client, void* owner, Type type, const String& na
 
     m_page_view = container.add<Web::OutOfProcessWebView>();
 
-    m_page_view->load("data:text/html,<!DOCTYPE html><html></html>");
+    m_page_view->load("data:text/html,<!DOCTYPE html><html><head><style>div { font-family: Csilla; font-weight: lighter; }</style></head><body></body></html>");
     m_page_view->on_load_finish = [this](auto&) {
         m_page_view->run_javascript("window.scrollTo(0, 9999);");
     };
@@ -249,7 +249,7 @@ void IRCWindow::did_add_message(const String& name, const String& message)
     html_builder.append("data:text/html,<!DOCTYPE html><html>");
     html_builder.append(document_inner_html);
     html_builder.append("</html>");
-    m_page_view->load(html_builder.build());
+    //m_page_view->load(html_builder.build());
 }
 
 void IRCWindow::clear_unread_count()
@@ -264,3 +264,63 @@ int IRCWindow::unread_count() const
 {
     return m_unread_count;
 }
+
+static String timestamp_string()
+{
+    auto now = time(nullptr);
+    auto* tm = localtime(&now);
+    return String::formatted("{:02}:{:02}:{:02} ", tm->tm_hour, tm->tm_min, tm->tm_sec);
+}
+
+void IRCWindow::add_message(char prefix, const String& name, const String& text, Color color)
+{
+    auto nick_string = String::formatted("<{}{}> ", prefix ? prefix : ' ', name.characters());
+    auto html = String::formatted(
+        "<span>{}</span>"
+        "<b>{}</b>"
+        "<span>{}</span>",
+        timestamp_string(),
+        escape_html_entities(nick_string),
+        escape_html_entities(text));
+
+    StringBuilder builder;
+    builder.append(R"~~~(
+        var msg = document.createElement("div");
+        msg.innerHTML = ")~~~");
+    builder.append_escaped_for_json(html);
+    builder.append(R"~~~(";
+        msg.style.color = ")~~~");
+    builder.append_escaped_for_json(color.to_string());
+    builder.append(R"~~~(";)~~~");
+    builder.append(R"~~~(
+        document.body.appendChild(msg);
+        window.scrollTo(0, 99999); )~~~");
+
+    m_page_view->run_javascript(builder.string_view());
+}
+
+void IRCWindow::add_message(const String& text, Color color)
+{
+    auto html = String::formatted(
+        "<span>{}</span>"
+        "<span>{}</span>",
+        timestamp_string(),
+        escape_html_entities(text));
+
+    StringBuilder builder;
+    builder.append(R"~~~(
+        var msg = document.createElement("div");
+        msg.innerHTML = ")~~~");
+    builder.append_escaped_for_json(html);
+    builder.append(R"~~~(";
+        msg.style.color = ")~~~");
+    builder.append_escaped_for_json(color.to_string());
+    builder.append(R"~~~(";)~~~");
+    builder.append(R"~~~(
+        document.body.appendChild(msg);
+        window.scrollTo(0, 9999); )~~~");
+
+    m_page_view->run_javascript(builder.string_view());
+}
+
+
