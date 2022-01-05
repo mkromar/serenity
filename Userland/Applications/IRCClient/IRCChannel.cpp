@@ -46,14 +46,14 @@ void IRCChannel::remove_member(const String& name)
 
 void IRCChannel::add_message(char prefix, const String& name, const String& text, Color color)
 {
-    log().add_message(prefix, name, text, color);
-    window().did_add_message(name, text);
+    m_window->add_message(prefix, name, text, color);
+    m_window->did_add_message(name, text);
 }
 
 void IRCChannel::add_message(const String& text, Color color)
 {
-    log().add_message(text, color);
-    window().did_add_message();
+    m_window->add_message(text, color);
+    m_window->did_add_message();
 }
 
 void IRCChannel::say(const String& text)

@@ -56,7 +56,7 @@ GUI::Variant IRCWindowListModel::data(const GUI::ModelIndex& index, GUI::ModelRo
             auto& window = m_client->window_at(index.row());
             if (window.unread_count())
                 return Color(Color::Red);
-            if (!window.channel().is_open())
+            if (window.type() == IRCWindow::Type::Channel && !window.channel().is_open())
                 return Color(Color::WarmGray);
             return Color(Color::Black);
         }
