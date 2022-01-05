@@ -40,8 +40,8 @@ public:
     int unread_count() const;
     void clear_unread_count();
 
-    void add_message(char prefix, const String& name, const String& text, Color color);
-    void add_message(const String& text, Color color);
+    void add_message(char prefix, const String& name, const String& text, Color = Color::Black);
+    void add_message(const String& text, Color = Color::Black);
     void did_add_message(const String& name = {}, const String& message = {});
 
     IRCChannel& channel() { return *(IRCChannel*)m_owner; }

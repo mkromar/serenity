@@ -244,12 +244,6 @@ void IRCWindow::did_add_message(const String& name, const String& message)
         m_client->aid_update_window_list();
         return;
     }
-    auto document_inner_html = m_log_buffer->document().document_element()->inner_html();
-    StringBuilder html_builder;
-    html_builder.append("data:text/html,<!DOCTYPE html><html>");
-    html_builder.append(document_inner_html);
-    html_builder.append("</html>");
-    //m_page_view->load(html_builder.build());
 }
 
 void IRCWindow::clear_unread_count()
