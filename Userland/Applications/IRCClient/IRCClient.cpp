@@ -635,7 +635,6 @@ void IRCClient::handle_ping(const Message& msg)
 {
     if (msg.arguments.size() < 1)
         return;
-    m_log->add_message(0, "", "Ping? Pong!");
     send_pong(msg.arguments[0]);
 }
 
