@@ -392,7 +392,6 @@ void IRCClient::handle(const Message& msg)
 
 void IRCClient::add_server_message(const String& text, Color color)
 {
-    //m_log->add_message(0, "", text, color);
     m_server_subwindow->add_message(0, "", text, color);
     m_server_subwindow->did_add_message();
 }
